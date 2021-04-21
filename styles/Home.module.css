@@ -72,7 +72,7 @@
 }
 
 .card {
-  margin: 1rem;
+  margin: 1rem 0;
   flex-basis: 45%;
   padding: 1.5rem;
   text-align: left;
