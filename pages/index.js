@@ -1,42 +1,112 @@
 import { useState } from 'react';
 import Head from 'next/head'
-import { QueryClient, QueryClientProvider, useQuery } from 'react-query';
+import { useMutation, useQuery, useQueryClient } from 'react-query';
 import axios from 'axios';
 
 import styles from '../styles/Home.module.css'
 
-const queryClient = new QueryClient();
+const defaultValues = {
+  title: '',
+  body: '',
+  author: ''
+};
 
 export default function Home() {
   const [activePostId, setActivePostId] = useState();
-  return (
-    <QueryClientProvider client={queryClient}>
-      <div className={styles.container}>
-        <Head>
-          <title>React Query CRUD</title>
-          <link rel="icon" href="/favicon.ico" />
-        </Head>
+  const qClient = useQueryClient();
 
-        <div className={styles.grid}>
-          <header className={styles.header}>
-            <h2>React Query CRUD</h2>
-          </header>
-          <div className={styles.sidebar}>
-            <span>Sidebar</span>
-          </div>
-          <main className={styles.main}>
-            {activePostId ? (
-              <Post postId={activePostId} setActivePostId={setActivePostId} /> 
-            ) : (
-              <Posts setActivePostId={setActivePostId} />
-            )}
-          </main>
-          <footer className={styles.footer}>
-            <span>Made with 💜</span>
-          </footer>
+  const [values, setValues] = useState(defaultValues);
+
+  const { mutate, status, } = useMutation((values) => {
+    return axios.post('/api/posts', values).then(res => res.data);
+  }, {
+    onSuccess: (data) => {
+      qClient.refetchQueries('posts');
+    }
+  })
+
+  function handleOnChange(key, value) {
+    setValues((prev) => ({
+      ...prev,
+      [key]: value
+    }));
+  }
+
+  function handleOnSubmit(e) {
+    setValues(defaultValues);
+    e.preventDefault();
+    mutate(values);
+  }
+
+  return (
+    <div className={styles.container}>
+      <Head>
+        <title>React Query CRUD</title>
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+
+      <div className={styles.grid}>
+        <header className={styles.header}>
+          <h2>React Query CRUD</h2>
+        </header>
+        <div className={styles.sidebar}>
+          <h3>Create New Post</h3>
+          <form className={styles.form} onSubmit={handleOnSubmit}>
+            <div className={styles.formRow}>
+              <label className={styles.formLabel}>Title</label>
+              <input
+                name="title"
+                placeholder="enter title"
+                className={styles.formInput}
+                value={values.title}
+                onChange={(e) => handleOnChange('title', e.target.value)}
+              />
+            </div>
+            <div className={styles.formRow}>
+              <label className={styles.formLabel}>Body</label>
+              <textarea
+                name="body"
+                placeholder="enter body"
+                className={styles.formInput}
+                value={values.body}
+                onChange={(e) => handleOnChange('body', e.target.value)}
+              ></textarea>
+            </div>
+            <div className={styles.formRow}>
+              <label className={styles.formLabel}>Author</label>
+              <input
+                name="author"
+                placeholder="enter author"
+                className={styles.formInput}
+                value={values.author}
+                onChange={(e) => handleOnChange('author', e.target.value)}
+              />
+            </div>
+            <button type="submit" className={styles.btn}>
+              {status === 'loading' ? (
+                <span>...</span>
+              ) : status === 'error' ? (
+                <span>Error occurred</span>
+              ) : status === 'success' ? (
+                'Post created'
+              ) : (
+                'Create Post'
+              )}
+            </button>
+          </form>
         </div>
+        <main className={styles.main}>
+          {activePostId ? (
+            <Post postId={activePostId} setActivePostId={setActivePostId} />
+          ) : (
+            <Posts setActivePostId={setActivePostId} />
+          )}
+        </main>
+        <footer className={styles.footer}>
+          <span>Made with 💜</span>
+        </footer>
       </div>
-    </QueryClientProvider>
+    </div>
   );
 }
 

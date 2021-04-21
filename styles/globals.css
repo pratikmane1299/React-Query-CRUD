@@ -16,3 +16,8 @@ a {
   padding: 0;
   box-sizing: border-box;
 }
+
+label, input, textarea, select, option {
+  display: block;
+  font-family: inherit;
+}
