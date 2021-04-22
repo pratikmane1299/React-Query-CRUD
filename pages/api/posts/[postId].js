@@ -1,6 +1,10 @@
 import db from '../../../db';
+import { sleep } from '../../../utils'
 
-export default (req, res) => {
+export default async (req, res) => {
+
+  await sleep(500)
+
   try{
     if (req.method === 'GET') {
       GET(req, res);
@@ -42,7 +46,7 @@ function PUT(req, res) {
     ...req.body
   }
 
-  db.posts.map(post => (post.id === postId ? updatedPost : post));
+  db.posts = db.posts.map(post => (post.id === postId ? updatedPost : post));
 
   res.json(updatedPost);
 }
@@ -56,7 +60,7 @@ function DELETE(req, res) {
     return res.send('Post not found')
   }
 
-  db.posts.filter(p => p.id !== postId);
+  db.posts = db.posts.filter(p => p.id !== postId);
 
   res.send('Post deleted');
 }

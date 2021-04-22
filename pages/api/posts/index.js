@@ -1,7 +1,10 @@
 import { nanoid } from 'nanoid';
 import db from '../../../db';
+import { sleep } from '../../../utils'
 
-export default (req, res) => {
+export default async (req, res) => {
+  await sleep();
+
   try {
     if (req.method === 'GET') {
       GET(req, res);
