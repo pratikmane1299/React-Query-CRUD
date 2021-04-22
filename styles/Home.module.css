@@ -74,6 +74,9 @@
 
 .card {
   margin: 1rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   flex-basis: 45%;
   padding: 1.5rem;
   text-align: left;
@@ -150,5 +153,21 @@
 }
 
 .btn:hover {
+  opacity: 0.8;
+}
+
+.deleteBtn {
+  width: 40px;
+  height: 40px;
+  padding: 0.5rem;
+  outline: none;
+  border: #0070f3;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #ee3333;
+  color: white;
+}
+
+.deleteBtn:hover {
   opacity: 0.8;
 }

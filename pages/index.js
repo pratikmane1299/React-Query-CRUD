@@ -153,8 +153,21 @@ function fetchPosts(key) {
 }
 
 function Posts({ setActivePostId }) {
+  const qClient = useQueryClient();
 
   const { status, data, error, isFetching } = useQuery('posts', fetchPosts);
+
+  const { mutate: deletePost, status: deletePostStatus } = useMutation((id) => {
+    return axios.delete(`/api/posts/${id}`).then(res => res.data);
+  }, {
+    onSuccess: () => {
+      qClient.refetchQueries('posts');
+    },
+  });
+
+  function handleOnDelete(id) {
+    deletePost(id); 
+  }
 
   return (
     <>
@@ -164,16 +177,37 @@ function Posts({ setActivePostId }) {
         <span>{error.message}</span>
       ) : (
         <>
-          <h3>
-            Posts{' '}
-            {isFetching ? <small>Updating...</small> : null}
-          </h3>
+          <h3>Posts {isFetching ? <small>Updating...</small> : null}</h3>
           <div className={styles.postsList}>
             {data.map((post) => (
-              <div className={styles.card} key={post.id} onClick={() => {
-                setActivePostId(post.id)
-              }}>
-                <a href="#">{post.title}</a>
+              <div
+                className={styles.card}
+                key={post.id}
+              >
+                <a href="#"
+                  onClick={() => {
+                    setActivePostId(post.id);
+                  }}
+                >
+                  {post.title}
+                </a>
+                <button className={styles.deleteBtn} onClick={(e) => {
+                  e.preventDefault();
+                  handleOnDelete(post.id);
+                }}>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
               </div>
             ))}
           </div>
