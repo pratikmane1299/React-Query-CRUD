@@ -27,6 +27,21 @@ export default function Home() {
   const { mutate: createPost, status: createPostStatus } = useMutation((values) => {
     return axios.post('/api/posts', values).then(res => res.data);
   }, {
+    onMutate: async (post) => {
+      console.log(Math.floor(Math.random() * (10 - 1)) + 1);
+      await qClient.cancelQueries('posts');
+
+      const previousValue = qClient.getQueryData('posts');
+
+      await qClient.setQueryData('posts', (old) => {
+        return [...old, { id: Math.floor(Math.random()),...post }];
+      });
+
+      return previousValue;
+    },
+    onError: (error, variables, previousValue) => {
+      qClient.setQueryData('posts', previousValue);
+    },
     onSuccess: (data) => {
       qClient.refetchQueries('posts');
     }
@@ -40,6 +55,19 @@ export default function Home() {
   const {mutate: updatePost, status: updatePostStatus } = useMutation(({ values, activePostId }) => {
     return axios.put(`/api/posts/${activePostId}`, values).then(res => res.data);
   }, {
+    onMutate: ({values, activePostId}) => {
+      const previousPost = qClient.getQueryData(['post', activePostId]);
+
+      qClient.setQueryData(['post', activePostId], (old) => ({
+        ...old,
+        ...values
+      }));
+
+      return previousPost;
+    },
+    onError: (err, { activePostId }, previousValue) => {
+      qClient.setQueryData(['post', activePostId], previousValue);
+    },
     onSuccess: async (data) => {
       await qClient.refetchQueries(['post', data.id]);
       qClient.refetchQueries('posts');
@@ -160,6 +188,16 @@ function Posts({ setActivePostId }) {
   const { mutate: deletePost, status: deletePostStatus } = useMutation((id) => {
     return axios.delete(`/api/posts/${id}`).then(res => res.data);
   }, {
+    onMutate: (id) => {
+      const previousPosts = qClient.getQueryData('posts');
+
+      qClient.setQueryData('posts', (old) => (old.filter(post => post.id !== id)));
+
+      return previousPosts;
+    },
+    onError: (err, variables, previousValue) => {
+      qClient.setQueryData('posts', previousValue);
+    },
     onSuccess: () => {
       qClient.refetchQueries('posts');
     },

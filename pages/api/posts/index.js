@@ -3,7 +3,7 @@ import db from '../../../db';
 import { sleep } from '../../../utils'
 
 export default async (req, res) => {
-  await sleep();
+  await sleep(2000);
 
   try {
     if (req.method === 'GET') {
