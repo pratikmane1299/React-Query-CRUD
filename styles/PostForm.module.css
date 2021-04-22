@@ -1,0 +1,40 @@
+.form {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.formRow {
+  /* padding: 0.5rem; */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.formRow .formLabel {
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+.formRow .formInput {
+  padding: 0.5rem;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 4px;
+}
+
+.btn {
+  padding: 0.5rem;
+  width: auto;
+  font-size: 1rem;
+  font-weight: 600;
+  background-color: #0070f3;
+  color: white;
+  outline: none;
+  border: #0070f3;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  opacity: 0.8;
+}

@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Head from 'next/head'
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import axios from 'axios';
+
+import PostForm from '../components/PostForm';
 
 import styles from '../styles/Home.module.css'
 
@@ -15,15 +17,34 @@ export default function Home() {
   const [activePostId, setActivePostId] = useState();
   const qClient = useQueryClient();
 
-  const [values, setValues] = useState(defaultValues);
+  const { data: post, status: postStatus, error, isFetching } = useQuery(
+    activePostId && ["post", activePostId],
+    fetchPost
+  );
 
-  const { mutate, status, } = useMutation((values) => {
+  const [values, setValues] = useState(defaultValues || post);
+
+  const { mutate: createPost, status: createPostStatus } = useMutation((values) => {
     return axios.post('/api/posts', values).then(res => res.data);
   }, {
     onSuccess: (data) => {
       qClient.refetchQueries('posts');
     }
   })
+
+  useEffect(() => {
+    if (post) setValues(post);
+    else setValues(defaultValues);
+  }, [post, isFetching]);
+
+  const {mutate: updatePost, status: updatePostStatus } = useMutation(({ values, activePostId }) => {
+    return axios.put(`/api/posts/${activePostId}`, values).then(res => res.data);
+  }, {
+    onSuccess: async (data) => {
+      await qClient.refetchQueries(['post', data.id]);
+      qClient.refetchQueries('posts');
+    }
+  });
 
   function handleOnChange(key, value) {
     setValues((prev) => ({
@@ -33,9 +54,13 @@ export default function Home() {
   }
 
   function handleOnSubmit(e) {
-    setValues(defaultValues);
     e.preventDefault();
-    mutate(values);
+    setValues(defaultValues);
+    if (activePostId) {
+      updatePost({ values, activePostId })
+    } else {
+      createPost(values);
+    }
   }
 
   return (
@@ -50,54 +75,67 @@ export default function Home() {
           <h2>React Query CRUD</h2>
         </header>
         <div className={styles.sidebar}>
-          <h3>Create New Post</h3>
-          <form className={styles.form} onSubmit={handleOnSubmit}>
-            <div className={styles.formRow}>
-              <label className={styles.formLabel}>Title</label>
-              <input
-                name="title"
-                placeholder="enter title"
-                className={styles.formInput}
-                value={values.title}
-                onChange={(e) => handleOnChange('title', e.target.value)}
+          {activePostId ? (
+            postStatus === "loading" ? (
+              <span>Loading...</span>
+            ) : postStatus === "error" ? (
+              <span>Error occurred</span>
+            ) : postStatus === "success" ? (
+              <>
+                <h2>Edit Post{' '}{isFetching && 'Updating...'}</h2>
+                <PostForm
+                  values={values}
+                  handleOnChange={handleOnChange}
+                  onFormSubmit={handleOnSubmit}
+                  submitText={
+                    updatePostStatus === "loading"
+                      ? "..."
+                      : updatePostStatus === "error"
+                      ? "Error"
+                      : updatePostStatus === "success"
+                      ? "Post updated !!!"
+                      : "Update Post"
+                  }
+                />
+              </>
+            ) : null
+          ) : (
+            <>
+              <h2>Create Post</h2>
+              <PostForm
+                values={values}
+                handleOnChange={handleOnChange}
+                onFormSubmit={handleOnSubmit}
+                submitText={
+                  createPostStatus === "loading"
+                    ? "..."
+                    : createPostStatus === "error"
+                    ? "Error"
+                    : createPostStatus === "success"
+                    ? "Post created !!!"
+                    : "Create Post"
+                }
               />
-            </div>
-            <div className={styles.formRow}>
-              <label className={styles.formLabel}>Body</label>
-              <textarea
-                name="body"
-                placeholder="enter body"
-                className={styles.formInput}
-                value={values.body}
-                onChange={(e) => handleOnChange('body', e.target.value)}
-              ></textarea>
-            </div>
-            <div className={styles.formRow}>
-              <label className={styles.formLabel}>Author</label>
-              <input
-                name="author"
-                placeholder="enter author"
-                className={styles.formInput}
-                value={values.author}
-                onChange={(e) => handleOnChange('author', e.target.value)}
-              />
-            </div>
-            <button type="submit" className={styles.btn}>
-              {status === 'loading' ? (
-                <span>...</span>
-              ) : status === 'error' ? (
-                <span>Error occurred</span>
-              ) : status === 'success' ? (
-                'Post created'
-              ) : (
-                'Create Post'
-              )}
-            </button>
-          </form>
+            </>
+          )}
         </div>
         <main className={styles.main}>
           {activePostId ? (
-            <Post postId={activePostId} setActivePostId={setActivePostId} />
+            postStatus === "loading" ? (
+              <span>Loading...</span>
+            ) : postStatus === "error" ? (
+              <span>Error occurred</span>
+            ) : (
+              postStatus === "success" && (
+                <Post
+                  postId={activePostId}
+                  post={post}
+                  status={postStatus}
+                  isFetching={isFetching}
+                  setActivePostId={setActivePostId}
+                />
+              )
+            )
           ) : (
             <Posts setActivePostId={setActivePostId} />
           )}
@@ -149,8 +187,7 @@ function fetchPost({ queryKey }) {
   return axios.get(`/api/posts/${queryKey[1]}`).then(res => res.data);
 }
 
-function Post({ postId, setActivePostId }) {
-  const { data: post, status: postStatus, error, isFetching } = useQuery(['post', postId], fetchPost);
+function Post({ postId, post, postStatus, isFetching, setActivePostId }) {
 
   return (
     <>
